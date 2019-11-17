@@ -3,7 +3,8 @@ from time import time
 import networkx as nx
 import matplotlib.pyplot as plt
 # import pygraphviz
-from utils.graph_utils import generate_graph, get_strongly_connected_components, map_components_to_out_edges
+from utils.graph_utils import generate_graph, get_strongly_connected_components, map_components_to_out_edges, \
+    subgraph_threat
 from utils.threat_calc import ThreatCalculator
 
 graph = nx.DiGraph()
@@ -100,6 +101,7 @@ def test():
     start_time = time()
     components = get_strongly_connected_components(graph)
     components_outs_map = map_components_to_out_edges(graph, components)
+    component_threat = subgraph_threat(graph, components[1])
     finish_time = time()
 
     graph_threat = calculate_graph_threat(graph, device_nodes_list)

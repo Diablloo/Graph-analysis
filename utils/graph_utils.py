@@ -3,6 +3,8 @@ from time import time
 
 from networkx import DiGraph, strongly_connected_components
 
+from utils.threat_calc import ThreatCalculator
+
 
 def generate_graph(n: int, max_vulns_per_node: int, max_nodes_per_node: int, chance: float = 50):
     """
@@ -80,9 +82,18 @@ def get_strongly_connected_components(graph: DiGraph, min_nodes_in_component: in
     return complex_components
 
 
+def subgraph_threat(graph: DiGraph, nodes: list):
+    sub_graph = graph.subgraph(nodes)
+    calc = ThreatCalculator(sub_graph)
+    assert len(nodes) != 0
+    sub_graph_threat = calc.calculate_threat_for_node(nodes.pop())
+
+    return sub_graph_threat
+
+
 def map_components_to_out_edges(graph: DiGraph, components):
     """
-    We find all outgoing edges to ANOTHER components or nodes
+    We look for all outgoing edges to ANOTHER components or nodes
     :param graph:
     :param components:
     :return:
@@ -95,4 +106,5 @@ def map_components_to_out_edges(graph: DiGraph, components):
                 if v not in component and v not in out_elems:
                     out_elems.append(v)
         components_map.append(out_elems)
+
     return components_map
