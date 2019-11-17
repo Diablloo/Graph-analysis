@@ -1,7 +1,7 @@
 import random
 from time import time
 
-from networkx import DiGraph
+from networkx import DiGraph, strongly_connected_components
 
 
 def generate_graph(n: int, max_vulns_per_node: int, max_nodes_per_node: int, chance: float = 50):
@@ -62,3 +62,37 @@ def generate_graph(n: int, max_vulns_per_node: int, max_nodes_per_node: int, cha
         step_nodes_count = len(tmp_nodes_list)
 
     return (graph, devices, vulns)
+
+
+def get_strongly_connected_components(graph: DiGraph, min_nodes_in_component: int = 2):
+    """
+
+    :param min_nodes_in_component:
+    :param graph:
+    :return:
+    """
+    strong_components = list(strongly_connected_components(graph))
+    complex_components = []
+    for component in strong_components:
+        if len(component) >= min_nodes_in_component:
+            complex_components.append(component)
+
+    return complex_components
+
+
+def map_components_to_out_edges(graph: DiGraph, components):
+    """
+    We find all outgoing edges to ANOTHER components or nodes
+    :param graph:
+    :param components:
+    :return:
+    """
+    components_map = []
+    for component in components:
+        out_elems = []
+        for elem in component:
+            for u, v in graph.out_edges(elem):
+                if v not in component and v not in out_elems:
+                    out_elems.append(v)
+        components_map.append(out_elems)
+    return components_map

@@ -3,7 +3,7 @@ from time import time
 import networkx as nx
 import matplotlib.pyplot as plt
 # import pygraphviz
-from utils.graph_utils import generate_graph
+from utils.graph_utils import generate_graph, get_strongly_connected_components, map_components_to_out_edges
 from utils.threat_calc import ThreatCalculator
 
 graph = nx.DiGraph()
@@ -45,6 +45,25 @@ def find_best_countermeasure(graph, device_nodes_list, vuln_nodes_list):
     return choice, threat
 
 
+def print_graph(graph, devices, vulns):
+    pos = nx.spring_layout(graph)
+    nx.draw_networkx_nodes(graph, pos,
+                           nodelist=devices,
+                           node_color='g',
+                           node_size=80,
+                           alpha=0.8)
+    nx.draw_networkx_nodes(graph, pos,
+                           nodelist=vulns,
+                           node_color='r',
+                           node_size=80,
+                           alpha=0.8)
+    edge_weights = nx.get_edge_attributes(graph, 'weight')
+    nx.draw_networkx_labels(graph, pos, font_size=9)
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_weights, font_size=9)
+    nx.draw_networkx_edges(graph, pos)
+    return
+
+
 def test():
     for node in device_nodes_list:
         graph.add_node(node)
@@ -76,14 +95,12 @@ def test():
     # cycles = nx.simple_cycles(graph)
     cycles = nx.find_cycle(graph, source='start')
     finish_time = time()
-    lasts_time = finish_time - start_time
     cycle_list = list(cycles)
 
     start_time = time()
-    strong_components = nx.strongly_connected_components(graph)
+    components = get_strongly_connected_components(graph)
+    components_outs_map = map_components_to_out_edges(graph, components)
     finish_time = time()
-    lasts_time = finish_time - start_time
-    bridge_list = list(strong_components)
 
     graph_threat = calculate_graph_threat(graph, device_nodes_list)
 
@@ -96,34 +113,25 @@ def test():
     print(f"Calculation time: {finish_time - start_time} s")
 
 
-def print_graph(graph, devices, vulns):
-    pos = nx.spring_layout(graph)
-    nx.draw_networkx_nodes(graph, pos,
-                           nodelist=devices,
-                           node_color='g',
-                           node_size=80,
-                           alpha=0.8)
-    nx.draw_networkx_nodes(graph, pos,
-                           nodelist=vulns,
-                           node_color='r',
-                           node_size=80,
-                           alpha=0.8)
-    edge_weights = nx.get_edge_attributes(graph, 'weight')
-    nx.draw_networkx_labels(graph, pos, font_size=9)
-    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_weights, font_size=9)
-    nx.draw_networkx_edges(graph, pos)
-    return
+def generate_graph_and_test():
+    graph, devices, vulns = generate_graph(4, 2, 3, chance=80)
+    print_graph(graph, devices, vulns)
+    # strongly connected components
+    components = get_strongly_connected_components(graph)
+
+    # graph threat
+    graph_threat = calculate_graph_threat(graph, devices)
+
+    start_time = time()
+    # countermeasures and new threat
+    best_countermeasure, new_graph_threat = find_best_countermeasure(graph, devices, vulns)
+    finish_time = time()
+    print(f"Graph threat = {graph_threat}")
+    print(f"Best countermeasure = {best_countermeasure}")
+    print(f"After deletion threat = {new_graph_threat}")
+    print(f"Calculation time: {finish_time - start_time} s")
+    print(f"Finished")
 
 
-graph, devices, vulns = generate_graph(1000, 50, 10, chance=80)
-# print_graph(graph, devices, vulns)
-
-graph_threat = calculate_graph_threat(graph, devices)
-start_time = time()
-best_countermeasure, new_graph_threat = find_best_countermeasure(graph, devices, vulns)
-finish_time = time()
-print(f"Graph threat = {graph_threat}")
-print(f"Best countermeasure = {best_countermeasure}")
-print(f"After deletion threat = {new_graph_threat}")
-print(f"Calculation time: {finish_time - start_time} s")
-print(f"Finished")
+if __name__ == '__main__':
+    test()
