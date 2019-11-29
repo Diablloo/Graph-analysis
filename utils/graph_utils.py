@@ -6,13 +6,13 @@ from networkx import DiGraph, strongly_connected_components
 from utils.threat_calc import ThreatCalculator
 
 
-def generate_graph(n: int, max_vulns_per_node: int, max_nodes_per_node: int, chance: float = 50):
+def generate_graph(max_nodes: int, max_vulns_per_node: int, max_nodes_per_node: int, chance: float = 50):
     """
     Generates random attack graph
     :param chance: from 0 to 100
     :param max_nodes_per_node:
     :param max_vulns_per_node:
-    :param n: nodes amount
+    :param max_nodes: nodes amount
     :return:
     """
     random.seed(time())
@@ -23,10 +23,11 @@ def generate_graph(n: int, max_vulns_per_node: int, max_nodes_per_node: int, cha
     devices = []
     vulns = []
 
-    while cur_nodes_amount < n:
+    while cur_nodes_amount < max_nodes:
         tmp_nodes_list = []
         for node in nodes_list:
             node_vulns = {}
+            nodes = []
             if cur_nodes_amount == 1:
                 step_nodes_amount = random.randint(1, max_nodes_per_node)
             else:
@@ -36,7 +37,9 @@ def generate_graph(n: int, max_vulns_per_node: int, max_nodes_per_node: int, cha
                 next_node = cur_nodes_amount
                 cur_nodes_amount += 1
                 node_vulns[next_node] = []
+                nodes.append(next_node)
                 tmp_nodes_list.append(next_node)
+
 
                 devices.append(next_node)
                 step_vulns_for_node = random.randint(1, max_vulns_per_node)
@@ -47,16 +50,23 @@ def generate_graph(n: int, max_vulns_per_node: int, max_nodes_per_node: int, cha
                     node_vulns[next_node].append(cur_vuln)
                     vulns.append(cur_vuln)
 
-                    graph.add_edge(node, cur_vuln, weight=0)
-                    graph.add_edge(cur_vuln, next_node, weight=threat_level)
+                    #graph.add_edge(node, cur_vuln, weight=0)
+                    graph.add_edge(node, next_node, cve=cur_vuln)
 
-            for key, value in node_vulns.items():
-                for key_2, value_2 in node_vulns.items():
-                    if key_2 == key:
+            for node_first in nodes:
+                for node_second in nodes:
+                    if node_first == node_second:
                         continue
-                    for vuln_name in value_2:
+                    for vuln in node_vulns[node_second]:
                         if random.randint(0, 100) < chance:
-                            graph.add_edge(key, vuln_name, weight=0)
+                            graph.add_edge(node_first, node_second, cve=vuln)
+            # for key, value in node_vulns.items():
+            #     for key_2, value_2 in node_vulns.items():
+            #         if key_2 == key:
+            #             continue
+            #         for vuln_name in value_2:
+            #             if random.randint(0, 100) < chance:
+            #                 graph.add_edge(key, key_2, cve=vuln_name)
         nodes_list = tmp_nodes_list
         if len(nodes_list) == 0:
             break

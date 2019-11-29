@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 # import pygraphviz
 from utils.graph_utils import generate_graph, get_strongly_connected_components, map_components_to_out_edges, \
     subgraph_threat
+from utils.http_build_graph import GraphVisualizer
 from utils.threat_calc import ThreatCalculator
 
 graph = nx.DiGraph()
@@ -116,24 +117,46 @@ def test():
 
 
 def generate_graph_and_test():
-    graph, devices, vulns = generate_graph(4, 2, 3, chance=80)
-    print_graph(graph, devices, vulns)
+    graph, devices, vulns = generate_graph(500, 4, 10, chance=75)
+    # print_graph(graph, devices, vulns)
     # strongly connected components
     components = get_strongly_connected_components(graph)
 
     # graph threat
-    graph_threat = calculate_graph_threat(graph, devices)
+    # graph_threat = calculate_graph_threat(graph, devices)
 
     start_time = time()
     # countermeasures and new threat
-    best_countermeasure, new_graph_threat = find_best_countermeasure(graph, devices, vulns)
-    finish_time = time()
-    print(f"Graph threat = {graph_threat}")
-    print(f"Best countermeasure = {best_countermeasure}")
-    print(f"After deletion threat = {new_graph_threat}")
-    print(f"Calculation time: {finish_time - start_time} s")
+    # best_countermeasure, new_graph_threat = find_best_countermeasure(graph, devices, vulns)
+    countermeasure_search_time = time() - start_time
+    visualizer = GraphVisualizer('auto_generated_and_builded_graph')
+    start_time = time()
+    visualizer.read_graph(graph)
+    time_spent_for_building = time() - start_time
+    print(f"Spent {time_spent_for_building} seconds to build the graph")
+    # print(f"Graph threat = {graph_threat}")
+    # print(f"Best countermeasure = {best_countermeasure}")
+    # print(f"After deletion threat = {new_graph_threat}")
+    print(f"Calculation time: {countermeasure_search_time} seconds")
     print(f"Finished")
 
 
+def draw_graph_test():
+    for node in device_nodes_list:
+        graph.add_node(node)
+    for node in vuln_nodes_list:
+        graph.add_node(node)
+
+    edges = device_to_vulns + vuln_to_device
+
+    graph.add_weighted_edges_from(edges)
+    visualizer = GraphVisualizer('auto_builded_graph')
+    start_time = time()
+    visualizer.read_graph(graph)
+    time_spent_for_building = time() - start_time
+    print(f"Spent {time_spent_for_building} seconds to build the graph")
+    # visualizer.delete_graph()
+
 if __name__ == '__main__':
-    test()
+    #draw_graph_test()
+    generate_graph_and_test()
