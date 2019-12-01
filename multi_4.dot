@@ -1,0 +1,20 @@
+digraph  {
+0 [weight=0];
+1 [weight=1];
+2 [weight=1];
+3 [weight=8];
+0 -> 1  [cve=CVE_1_0, key=CVE_1_0];
+0 -> 1  [cve=CVE_1_1, key=CVE_1_1];
+0 -> 2  [cve=CVE_2_0, key=CVE_2_0];
+0 -> 3  [cve=CVE_3_0, key=CVE_3_0];
+0 -> 3  [cve=CVE_3_1, key=CVE_3_1];
+1 -> 2  [cve=CVE_2_0, key=CVE_2_0];
+1 -> 3  [cve=CVE_3_0, key=CVE_3_0];
+1 -> 3  [cve=CVE_3_1, key=CVE_3_1];
+2 -> 1  [cve=CVE_1_0, key=CVE_1_0];
+2 -> 1  [cve=CVE_1_1, key=CVE_1_1];
+2 -> 3  [cve=CVE_3_1, key=CVE_3_1];
+3 -> 1  [cve=CVE_1_0, key=CVE_1_0];
+3 -> 1  [cve=CVE_1_1, key=CVE_1_1];
+3 -> 2  [cve=CVE_2_0, key=CVE_2_0];
+}

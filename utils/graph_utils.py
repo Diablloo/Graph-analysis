@@ -1,7 +1,7 @@
 import random
 from time import time
 
-from networkx import DiGraph, strongly_connected_components
+from networkx import DiGraph, strongly_connected_components, MultiDiGraph
 
 from utils.threat_calc import ThreatCalculator
 
@@ -15,18 +15,21 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_nodes_per_node: 
     :param max_nodes: nodes amount
     :return:
     """
-    random.seed(time())
+    # random.seed(time())
+    random.seed(10)
     cur_nodes_amount = 1
     step_nodes_count = 1
-    graph = DiGraph()
+    graph = MultiDiGraph()
     nodes_list = [0]
-    devices = []
+    devices = [0]
     vulns = []
+    map_node_vulns = {}
+    node_vulns = {}
 
+    graph.add_node(nodes_list[0],weight=0)
     while cur_nodes_amount < max_nodes:
         tmp_nodes_list = []
         for node in nodes_list:
-            node_vulns = {}
             nodes = []
             if cur_nodes_amount == 1:
                 step_nodes_amount = random.randint(1, max_nodes_per_node)
@@ -38,6 +41,7 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_nodes_per_node: 
                 cur_nodes_amount += 1
                 node_vulns[next_node] = []
                 nodes.append(next_node)
+                graph.add_node(next_node,weight=random.randint(1,10))
                 tmp_nodes_list.append(next_node)
 
 
@@ -46,12 +50,12 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_nodes_per_node: 
 
                 for j in range(step_vulns_for_node):
                     threat_level = random.randint(1, 10)
-                    cur_vuln = f"{str(node)}_{j}_{str(next_node)}"
+                    cur_vuln = f"CVE_{str(next_node)}_{j}"
                     node_vulns[next_node].append(cur_vuln)
                     vulns.append(cur_vuln)
 
                     #graph.add_edge(node, cur_vuln, weight=0)
-                    graph.add_edge(node, next_node, cve=cur_vuln)
+                    graph.add_edge(node, next_node, key=cur_vuln, cve=cur_vuln)
 
             for node_first in nodes:
                 for node_second in nodes:
@@ -59,7 +63,7 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_nodes_per_node: 
                         continue
                     for vuln in node_vulns[node_second]:
                         if random.randint(0, 100) < chance:
-                            graph.add_edge(node_first, node_second, cve=vuln)
+                            graph.add_edge(node_first, node_second, key=vuln, cve=vuln)
             # for key, value in node_vulns.items():
             #     for key_2, value_2 in node_vulns.items():
             #         if key_2 == key:
@@ -73,7 +77,7 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_nodes_per_node: 
         # cur_nodes_amount += len(tmp_nodes_list)
         step_nodes_count = len(tmp_nodes_list)
 
-    return (graph, devices, vulns)
+    return (graph, devices, node_vulns)
 
 
 def get_strongly_connected_components(graph: DiGraph, min_nodes_in_component: int = 2):
@@ -91,14 +95,36 @@ def get_strongly_connected_components(graph: DiGraph, min_nodes_in_component: in
 
     return complex_components
 
+def subgraph_criticality(graph: MultiDiGraph, nodes: set, start_node):
+    """
 
-def subgraph_threat(graph: DiGraph, nodes: list):
+    :param start_node:
+    :param graph:
+    :param nodes:
+    :return:
+    """
+    assert len(nodes) != 0
     sub_graph = graph.subgraph(nodes)
     calc = ThreatCalculator(sub_graph)
-    assert len(nodes) != 0
-    sub_graph_threat = calc.calculate_threat_for_node(nodes.pop())
 
-    return sub_graph_threat
+    return calc.calculate_threat_for_node(start_node)
+
+
+def subgraph_threat(graph: MultiDiGraph, nodes: set, strong: bool = False):
+    """
+    Определение уровня угрозы для набора точек
+    :param strong:
+    :param graph:
+    :param nodes:
+    :return:
+    """
+    assert len(nodes) != 0
+    sub_graph = graph.subgraph(nodes)
+    calc = ThreatCalculator(sub_graph)
+    if strong:
+        return len(nodes) * calc.calculate_threat_for_node(list(nodes)[0])
+    else:
+        return calc.calculate_graph_threat(list(nodes))
 
 
 def map_components_to_out_edges(graph: DiGraph, components):
