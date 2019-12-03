@@ -3,8 +3,11 @@ from time import time
 import networkx as nx
 import matplotlib.pyplot as plt
 # import pygraphviz
+from networkx import MultiDiGraph
+from networkx.drawing.nx_pydot import write_dot
+
 from utils.graph_utils import generate_graph, get_strongly_connected_components, map_components_to_out_edges, \
-    subgraph_threat
+    subgraph_threat, subgraph_criticality
 from utils.http_build_graph import GraphVisualizer
 from utils.threat_calc import ThreatCalculator
 
@@ -37,8 +40,17 @@ def calculate_graph_threat(graph: nx.DiGraph, nodes: list) -> float:
     :return:
     """
     calc = ThreatCalculator(graph)
-    # nodes = ['2_192.168.0.100']
     return calc.calculate_graph_threat(nodes)
+
+def calculate_node_threat(graph: MultiDiGraph, node) -> float:
+    """
+
+    :param graph:
+    :param node:
+    :return:
+    """
+    calc = ThreatCalculator(graph)
+    return calc.calculate_threat_for_node(node)
 
 
 def find_best_countermeasure(graph, device_nodes_list, vuln_nodes_list):
@@ -47,22 +59,18 @@ def find_best_countermeasure(graph, device_nodes_list, vuln_nodes_list):
     return choice, threat
 
 
-def print_graph(graph, devices, vulns):
+def print_graph(graph: MultiDiGraph, devices, vulns):
     pos = nx.spring_layout(graph)
     nx.draw_networkx_nodes(graph, pos,
                            nodelist=devices,
                            node_color='g',
                            node_size=80,
                            alpha=0.8)
-    nx.draw_networkx_nodes(graph, pos,
-                           nodelist=vulns,
-                           node_color='r',
-                           node_size=80,
-                           alpha=0.8)
-    edge_weights = nx.get_edge_attributes(graph, 'weight')
+    edge_weights = nx.get_edge_attributes(graph, 'cve')
     nx.draw_networkx_labels(graph, pos, font_size=9)
-    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_weights, font_size=9)
+    # nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_weights, font_size=9)
     nx.draw_networkx_edges(graph, pos)
+    write_dot(graph, 'multi.dot')
     return
 
 
@@ -117,26 +125,41 @@ def test():
 
 
 def generate_graph_and_test():
-    graph, devices, vulns = generate_graph(500, 4, 10, chance=75)
+    strong_components_criticality = []
+    strong_components_threatness = []
+    n_tree_criticality = []
+    graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
     # print_graph(graph, devices, vulns)
     # strongly connected components
-    components = get_strongly_connected_components(graph)
+    strong_components = get_strongly_connected_components(graph)
+    for component in strong_components:
+        # we can count criticality from any node
+        component_criticality = subgraph_criticality(graph, component, list(component)[0])
 
+        # we can take only 1 node from strong connected component and multiply it on component size
+        component_threatness = len(component) * calculate_node_threat(graph,list(component)[0])
+        strong_components_criticality.append(component_criticality)
+        strong_components_threatness.append(component_threatness)
+
+        print(f"{component} criticality is {component_criticality}")
+        print(f"{component} threatness is {component_threatness}")
+
+    new_graph = prepare_new_graph(graph,)
     # graph threat
-    # graph_threat = calculate_graph_threat(graph, devices)
+    graph_threat = calculate_graph_threat(graph, devices)
 
     start_time = time()
     # countermeasures and new threat
-    # best_countermeasure, new_graph_threat = find_best_countermeasure(graph, devices, vulns)
+    best_countermeasure, new_graph_threat = find_best_countermeasure(graph, devices, vulns)
     countermeasure_search_time = time() - start_time
-    visualizer = GraphVisualizer('auto_generated_and_builded_graph')
+    visualizer = GraphVisualizer('AGG_new')
     start_time = time()
-    visualizer.read_graph(graph)
+    # visualizer.read_graph(graph)
     time_spent_for_building = time() - start_time
     print(f"Spent {time_spent_for_building} seconds to build the graph")
-    # print(f"Graph threat = {graph_threat}")
-    # print(f"Best countermeasure = {best_countermeasure}")
-    # print(f"After deletion threat = {new_graph_threat}")
+    print(f"Graph threat = {graph_threat}")
+    print(f"Best countermeasure = {best_countermeasure}")
+    print(f"After deletion threat = {new_graph_threat}")
     print(f"Calculation time: {countermeasure_search_time} seconds")
     print(f"Finished")
 

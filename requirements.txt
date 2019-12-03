@@ -1,4 +1,5 @@
 requests
 networkx
 matplotlib
+pydot
 # pygraphviz
