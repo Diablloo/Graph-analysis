@@ -91,7 +91,7 @@ def get_strongly_connected_components(graph: DiGraph, min_nodes_in_component: in
     complex_components = []
     for component in strong_components:
         if len(component) >= min_nodes_in_component:
-            complex_components.append(component)
+            complex_components.append(list(component))
 
     return complex_components
 
@@ -108,7 +108,6 @@ def subgraph_criticality(graph: MultiDiGraph, nodes: set, start_node):
     calc = ThreatCalculator(sub_graph)
 
     return calc.calculate_threat_for_node(start_node)
-
 
 def subgraph_threat(graph: MultiDiGraph, nodes: set, strong: bool = False):
     """
@@ -127,20 +126,39 @@ def subgraph_threat(graph: MultiDiGraph, nodes: set, strong: bool = False):
         return calc.calculate_graph_threat(list(nodes))
 
 
-def map_components_to_out_edges(graph: DiGraph, components):
+def get_component_out_edges(graph: MultiDiGraph, nodes: list) -> list:
+    """
+    Return all out edges
+    :param graph:
+    :param nodes:
+    :return: list of out edges
+    """
+    out_elems = []
+    for elem in nodes:
+        for u, v, attrs in graph.out_edges(elem, attr=True):
+            if v not in nodes and v not in out_elems:
+                out_elems.append(v)
+    return out_elems
+
+def get_component_in_edges(graph: MultiDiGraph, nodes: list) -> list:
+    """
+    Return all out edges
+    :param graph:
+    :param nodes:
+    :return: list of out edges
+    """
+    in_elems = []
+    for elem in nodes:
+        for u, v, attrs in graph.out_edges(elem, attr=True):
+            if u not in nodes and u not in in_elems:
+                in_elems.append(u)
+    return in_elems
+
+def map_component_edges(graph: MultiDiGraph, component):
     """
     We look for all outgoing edges to ANOTHER components or nodes
     :param graph:
-    :param components:
+    :param component:
     :return:
     """
-    components_map = []
-    for component in components:
-        out_elems = []
-        for elem in component:
-            for u, v in graph.out_edges(elem):
-                if v not in component and v not in out_elems:
-                    out_elems.append(v)
-        components_map.append(out_elems)
-
-    return components_map
+    return get_component_in_edges(graph, component), get_component_out_edges(graph, component)

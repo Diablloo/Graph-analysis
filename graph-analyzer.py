@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from networkx import MultiDiGraph
 from networkx.drawing.nx_pydot import write_dot
 
-from utils.graph_utils import generate_graph, get_strongly_connected_components, map_components_to_out_edges, \
+from utils.graph_utils import generate_graph, get_strongly_connected_components, map_component_edges, \
     subgraph_threat, subgraph_criticality
 from utils.http_build_graph import GraphVisualizer
 from utils.threat_calc import ThreatCalculator
@@ -109,8 +109,8 @@ def test():
 
     start_time = time()
     components = get_strongly_connected_components(graph)
-    components_outs_map = map_components_to_out_edges(graph, components)
-    component_threat = subgraph_threat(graph, components[1])
+    #components_outs_map = map_components_to_out_edges(graph, components)
+    #component_threat = subgraph_threat(graph, components[1])
     finish_time = time()
 
     graph_threat = calculate_graph_threat(graph, device_nodes_list)
@@ -144,7 +144,7 @@ def generate_graph_and_test():
         print(f"{component} criticality is {component_criticality}")
         print(f"{component} threatness is {component_threatness}")
 
-    new_graph = prepare_new_graph(graph,)
+
     # graph threat
     graph_threat = calculate_graph_threat(graph, devices)
 
