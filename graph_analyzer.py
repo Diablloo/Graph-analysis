@@ -10,6 +10,7 @@ from utils.graph_utils import generate_graph, get_strongly_connected_components,
     subgraph_threat, subgraph_criticality
 from utils.http_build_graph import GraphVisualizer
 from utils.threat_calc import ThreatCalculator
+from goptima.graph_optimizer import GraphOptimizer
 
 graph = nx.DiGraph()
 device_nodes_list = ['start', '1_192.168.0.100', '1_192.168.0.119', '1_10.23.0.1', '1_10.23.0.5', '2_192.168.0.100',
@@ -180,6 +181,14 @@ def draw_graph_test():
     print(f"Spent {time_spent_for_building} seconds to build the graph")
     # visualizer.delete_graph()
 
+
+def test_optimized_class():
+    graph, devices, vulns = generate_graph(5, 3, 3, chance=75)
+    graphOptimizer = GraphOptimizer(graph)
+    graphOptimizer.optimize()
+
+
 if __name__ == '__main__':
-    #draw_graph_test()
-    generate_graph_and_test()
+    # draw_graph_test()
+    # generate_graph_and_test()
+    test_optimized_class()

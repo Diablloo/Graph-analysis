@@ -4,7 +4,7 @@ from utils.graph_utils import get_strongly_connected_components, subgraph_critic
 from utils.threat_calc import ThreatCalculator
 
 
-class OptimizedGraph:
+class GraphOptimizer:
 
     def __init__(self, multiDiGraph: MultiDiGraph):
         self.nxGraph = multiDiGraph
