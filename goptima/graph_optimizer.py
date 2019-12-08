@@ -82,11 +82,7 @@ class GraphOptimizer:
         for node in self.strong_components[index]['nodes']:
             self.links_to_strong_components[node] = index
 
-    def _integrate_strong_component_to_graph(self, index: int):
-        component_name = f"strong_component_{index}"
-
-        # Create new node
-        # self.nxGraph.add_node(component_name, weight=self.strong_components[index]['threat'])
+    def _update_component_edges(self, index: int):
         # Add all previous links to this node
         edges_in, edges_out = map_component_edges(self.nxGraph, self.strong_components[index]['nodes'])
         edges_inside = map_component_inside_edges(self.nxGraph, self.strong_components[index]['nodes'])
@@ -111,7 +107,7 @@ class GraphOptimizer:
         self.strong_components[self.components_index] = strong_component_data
 
         self._link_nodes_to_component(self.components_index)
-        self._integrate_strong_component_to_graph(self.components_index)
+        self._update_component_edges(self.components_index)
         self.components_index += 1
 
     def create_optimized_component(self, component: list, criticality: float, threat: float):
@@ -120,6 +116,20 @@ class GraphOptimizer:
         component_data = {'threat': threat, 'criticality': criticality,
                           'subgraph_threat': threat * len(component), 'nodes': component}
         self._add_strong_component(component_data)
+
+    def _remove_strong_component(self, component_id):
+        """
+        Remove any information about strong component: node threat, links
+        :param component_id:
+        :return:
+        """
+        component = self.strong_components[component_id]
+
+        for node in component['nodes']:
+            self.nodes_threat.pop(node, None)
+            self.links_to_strong_components.pop(node, None)
+
+        self.strong_components.pop(component_id, None)
 
     def _update_strong_component(self, component_id: int):
         """
@@ -133,7 +143,7 @@ class GraphOptimizer:
 
         if not is_still_strong:
             # Remove previous component and get new if we can
-            self.strong_components.pop(component_id, None)
+            self._remove_strong_component(component_id)
             # Find new components
             strong_components_nodes = get_strongly_connected_components(subgraph)
             # Add new components to list of components
@@ -150,25 +160,31 @@ class GraphOptimizer:
         component = self.strong_components[component_id]
         component_threat = self.threat_calc.calculate_graph_threat([component['nodes'][0]])
         # Pre computed threat for all strong component nodes
-        for node in component:
+        for node in component['nodes']:
             self.nodes_threat[node] = component_threat
 
         component['threat'] = component_threat
         component['subgraph_threat'] = component_threat * len(component['nodes'])
 
+        # We need to update those edges, cause we use it to compute the threat
+        # TODO: measure the time for updating the edges. May be should change the mechanism to avoid this part
+        self._update_component_edges(component_id)
+
     def _update_nodes_threat(self, node_list: list):
         self.strong_components_to_update = set()
+        # TODO: newly built strong components are calculated twice!
         for node in node_list:
             if node in self.links_to_strong_components:
                 self.strong_components_to_update.add(self.links_to_strong_components[node])
             else:
-                self.nodes_threat[node] = 0.
+                self.nodes_threat.pop(node, None)
 
     def _workout_strong_component(self, component):
+        calc = ThreatCalculator(self.nxGraph)
         component_criticality = subgraph_criticality(self.nxGraph, component, component[0])
         # we can take only 1 node from strong connected component and multiply it on component size
         # TODO: may be i should speed up the threat counting by using memorized_calculate_threat_for_node???
-        component_threat = self.threat_calc.calculate_graph_threat([component[0]])
+        component_threat = calc.calculate_graph_threat([component[0]])
         # Pre computed threat for all strong component nodes
         for node in component:
             self.nodes_threat[node] = component_threat
@@ -176,15 +192,40 @@ class GraphOptimizer:
         self.create_optimized_component(component, component_criticality, component_threat)
 
     def _update_after_countermeasure(self, target):
+        new_components = []
+        if target in self.links_to_strong_components:
+            component_id = self.links_to_strong_components[target]
+            subgraph = self.nxGraph.subgraph(
+                self.strong_components[component_id]['nodes'])
+            is_still_strong = is_strongly_connected(subgraph)
+
+            if is_still_strong:
+                return
+            else:
+                self._remove_strong_component(component_id)
+                # Find new components
+                strong_components_nodes = get_strongly_connected_components(subgraph)
+                # Add new components to list of components
+                for component in strong_components_nodes:
+                    new_components.append(self.components_index)
+                    self._workout_strong_component(component)
+
         searcher = GraphSearcher(self.previousCopy)
         nodes_to_target = searcher.get_sources_to_target_node(target)
 
-        # Update strong components
-        if target in self.links_to_strong_components:
-            self._update_strong_component(self.links_to_strong_components[target])
-
-        # Update nodes and strong component threats
         self._update_nodes_threat(nodes_to_target)
+        # Remove newly created component from update list
+        for index in new_components:
+            self.strong_components_to_update.remove(index)
+        # searcher = GraphSearcher(self.previousCopy)
+        # nodes_to_target = searcher.get_sources_to_target_node(target)
+        #
+        # # Update strong components
+        # if target in self.links_to_strong_components:
+        #     self._update_strong_component(self.links_to_strong_components[target])
+        #
+        # # Update nodes and strong component threats
+        # self._update_nodes_threat(nodes_to_target)
 
 
     def find_countermeasure(self):
@@ -198,38 +239,72 @@ class GraphOptimizer:
         # self._update_after_countermeasure(target)
 
         threat = self.compute_threat()
-        return cve, new_threat
+        return cve, new_threat, target
+
+    def deep_copy(self):
+        """
+        Full copy of changeable parameters
+        :return:
+        """
+        graph = self.nxGraph.copy()
+        nodes_threat = self.nodes_threat.copy()
+        strong_components = self.strong_components.copy()
+        index = self.components_index
+        links = self.links_to_strong_components.copy()
+
+        return [graph, nodes_threat, strong_components,index, links]
+
+    def restore(self, params: list):
+        """
+        restoration of changeable parameters
+        :param params:
+        :return:
+        """
+        self.nxGraph = params[0]
+        self.nodes_threat = params[1]
+        self.strong_components = params[2]
+        self.components_index = params[3]
+        self.links_to_strong_components = params[4]
 
     def intelligence_find_countermeasure(self):
         deleted_vuln_threat_reducion = {}
         base_threat = self.compute_threat()
         max_reduction = -1
         max_cve = ""
+        computation_time = 0.
         # tmp_graph = self.graph.copy()
         #TODO: change score counting from depth to starter
         for node in self.vulns.keys():
             for vuln in self.vulns[node]:
-                base_graph = self.nxGraph.copy()
+                # Make copy of changeable params
+                deep_copy_params = self.deep_copy()
                 edges_to_delete = []
                 for u, v, attrs in self.nxGraph.in_edges(node, data=True):
                     if attrs['cve'] == vuln:
                         edges_to_delete.append((u,v))
                 for u,v in edges_to_delete:
-                    self.nxGraph.remove_edge(u, v, key=vuln)
+                    self.remove_edge([u, v, vuln])
                 # Optimization step
+
                 self._update_after_countermeasure(node)
-                # Basic search
+                self.threat_calc = ThreatCalculator(self.nxGraph, False,
+                                                    self.strong_components, self.links_to_strong_components)
+                start = time()
                 reduction = base_threat - self.compute_threat()
+                computation_time += time() - start
+
                 deleted_vuln_threat_reducion[vuln] = reduction
 
                 if reduction > max_reduction:
                     max_reduction = reduction
                     max_cve = vuln
                     target = node
+                # Restoration of base state
+                self.restore(deep_copy_params)
 
-                self.nxGraph = base_graph
+        print(f"Compute time: {computation_time}")
+        return max_cve, base_threat - max_reduction
 
-        return max_cve, base_threat - max_reduction, target
     def compute_threat(self):
         """
         After optimization we know the threat of strong components subgraphs and we destroyed the circles
@@ -241,8 +316,11 @@ class GraphOptimizer:
         # Update Threat of strong component
         for component in self.strong_components_to_update:
             self._update_component_params(component)
+
+        # Clearing components to update set
+        self.strong_components_to_update.clear()
         # Threat of nodes that dont belong to strong components
-        calc = ThreatCalculator(self.nxGraph, self.strong_components, self.links_to_strong_components)
+        calc = ThreatCalculator(self.nxGraph, False, self.strong_components, self.links_to_strong_components)
         # Calculate threat only for updated paths
         # So if we computed it before and it didn't change, so we can use it again
         for node in self.nodes:
@@ -251,15 +329,15 @@ class GraphOptimizer:
             else:
                 threat += self.nodes_threat[node]
         # Now we compute threat only for NEWLY changed pathes
-        graph_threat = calc.memorized_calculate_graph_threat(compute_node_list)
+        threat += calc.memorized_calculate_graph_threat(compute_node_list)
         # Now we need to summarize it with strong components threat
-        for component in self.strong_components.values():
-            graph_threat += component['subgraph_threat']
+        # for component in self.strong_components.values():
+        #     graph_threat += component['subgraph_threat']
 
-        calculated_nodes_threat = self.threat_calc.get_nodes_threat()
+        calculated_nodes_threat = calc.get_nodes_threat()
         self._extend_nodes_threat(calculated_nodes_threat)
 
-        return graph_threat
+        return threat
 
     def optimize(self):
         start = time()
@@ -270,6 +348,6 @@ class GraphOptimizer:
         for component in strong_components_nodes:
             self._workout_strong_component(component)
 
-        print(f"Constructed strong components in {time() - start} seconds")
+        #print(f"Constructed strong components in {time() - start} seconds")
 
 

@@ -56,8 +56,8 @@ def calculate_node_threat(graph: MultiDiGraph, node) -> float:
 
 def find_best_countermeasure(graph, device_nodes_list, vuln_nodes_list):
     calc = ThreatCalculator(graph)
-    choice, threat = calc.find_best_countermeasure_choice(device_nodes_list, vuln_nodes_list)
-    return choice, threat
+    choice, threat, target = calc.find_best_countermeasure_choice(device_nodes_list, vuln_nodes_list)
+    return choice, threat, target
 
 
 def print_graph(graph: MultiDiGraph, devices, vulns):
@@ -185,6 +185,11 @@ def draw_graph_test():
 def test_optimized_class():
     graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
 
+    graph_copy = graph.copy()
+    graph_for_simple = graph.copy()
+    devices_copy = devices.copy()
+    vulns_copy = vulns.copy()
+
     vulns_amount = 0
     for vuln_list in vulns.values():
         vulns_amount += len(vuln_list)
@@ -193,31 +198,21 @@ def test_optimized_class():
     print(f"Nodes amount: {len(devices)}")
     # print_graph(graph, devices, vulns)
     graphOptimizer = GraphOptimizer(graph)
+
     start = time()
     graphOptimizer.optimize()
-    graphOptimizer.compute_threat()
-    spent_time = time() - start
+    optimization_time = time() - start
 
     start = time()
-    graphOptimizer.find_countermeasure()
-    spent_time4 = time() - start
-
-    start = time()
-    graphOptimizer.intelligence_find_countermeasure()
+    cve, new_threat = graphOptimizer.intelligence_find_countermeasure()
     spent_time5 = time() - start
+    print(f"Intelligence countermeasure search time {spent_time5} result: {cve} - {new_threat}")
+    print(f"Optimization time: {optimization_time}")
 
     start = time()
-    calculate_graph_threat(graph, devices)
-    spent_time2 = time() - start
-
-
-    start = time()
-    # find_best_countermeasure(graph, devices, vulns)
+    cve, new_threat, target = find_best_countermeasure(graph_for_simple, devices_copy, vulns_copy)
     spent_time3 = time() - start
-
-    print(f"Intelligence countermeasure search time {spent_time5}")
-    print(f"Basic countermeasure search time {spent_time4}")
-    print(f"Simple countermeasure search time {spent_time2}")
+    print(f"Simple countermeasure search time {spent_time3} result: {cve} - {new_threat}")
 
 def branching_rest():
     graph, devices, vulns = generate_graph(5, 2, 3, chance=75)

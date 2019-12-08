@@ -1,3 +1,5 @@
+from time import time
+
 from networkx import DiGraph, MultiDiGraph
 
 
@@ -8,8 +10,12 @@ class ThreatCalculator:
     #     self.visited_nodes = []
     #     self.nodes_threat = {}
 
-    def __init__(self, graph: MultiDiGraph, strong_components: dict = None, links_to_components: dict = None):
-        self.graph = graph.copy()
+    def __init__(self, graph: MultiDiGraph, deep_copy: bool = True,
+                 strong_components: dict = None, links_to_components: dict = None):
+        if deep_copy:
+            self.graph = graph.copy()
+        else:
+            self.graph = graph
         self.strong_components = strong_components
         self.links_to_components = links_to_components
         self.visited_nodes = []
@@ -98,10 +104,12 @@ class ThreatCalculator:
         base_threat = self.calculate_graph_threat(device_nodes)
         max_reduction = -1
         max_cve = ""
+        computation_time = 0.
         # tmp_graph = self.graph.copy()
         #TODO: change score counting from depth to starter
         for node in node_vulns.keys():
             for vuln in node_vulns[node]:
+
                 base_graph = self.graph.copy()
                 edges_to_delete = []
                 for u, v, attrs in self.graph.in_edges(node, data=True):
@@ -110,7 +118,9 @@ class ThreatCalculator:
                 for u,v in edges_to_delete:
                     self.graph.remove_edge(u,v,key=vuln)
 
+                start = time()
                 reduction = base_threat - self.calculate_graph_threat(device_nodes)
+                computation_time += time() - start
                 deleted_vuln_threat_reducion[vuln] = reduction
 
                 if reduction > max_reduction:
@@ -120,6 +130,7 @@ class ThreatCalculator:
 
                 self.graph = base_graph
 
+        print(f"Computation time: {computation_time}")
         return max_cve, base_threat - max_reduction, target
 
     def get_list_of_compromised_nodes(self, nodes: list):
