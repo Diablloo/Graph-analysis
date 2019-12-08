@@ -3,7 +3,7 @@ from time import time
 import networkx as nx
 import matplotlib.pyplot as plt
 # import pygraphviz
-from networkx import MultiDiGraph
+from networkx import MultiDiGraph, maximum_branching, maximum_spanning_arborescence
 from networkx.drawing.nx_pydot import write_dot
 
 from utils.graph_utils import generate_graph, get_strongly_connected_components, map_component_edges, \
@@ -183,12 +183,52 @@ def draw_graph_test():
 
 
 def test_optimized_class():
-    graph, devices, vulns = generate_graph(5, 3, 3, chance=75)
-    graphOptimizer = GraphOptimizer(graph)
-    graphOptimizer.optimize()
+    graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
 
+    vulns_amount = 0
+    for vuln_list in vulns.values():
+        vulns_amount += len(vuln_list)
+
+    print(f"Vulnerabilities amount: {vulns_amount}")
+    print(f"Nodes amount: {len(devices)}")
+    # print_graph(graph, devices, vulns)
+    graphOptimizer = GraphOptimizer(graph)
+    start = time()
+    graphOptimizer.optimize()
+    graphOptimizer.compute_threat()
+    spent_time = time() - start
+
+    start = time()
+    graphOptimizer.find_countermeasure()
+    spent_time4 = time() - start
+
+    start = time()
+    graphOptimizer.intelligence_find_countermeasure()
+    spent_time5 = time() - start
+
+    start = time()
+    calculate_graph_threat(graph, devices)
+    spent_time2 = time() - start
+
+
+    start = time()
+    # find_best_countermeasure(graph, devices, vulns)
+    spent_time3 = time() - start
+
+    print(f"Intelligence countermeasure search time {spent_time5}")
+    print(f"Basic countermeasure search time {spent_time4}")
+    print(f"Simple countermeasure search time {spent_time2}")
+
+def branching_rest():
+    graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
+    branching = maximum_branching(graph)
+    arborescence = maximum_spanning_arborescence(graph)
+
+    pass
 
 if __name__ == '__main__':
     # draw_graph_test()
     # generate_graph_and_test()
     test_optimized_class()
+    # branching_rest()
+

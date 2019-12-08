@@ -6,11 +6,11 @@ from networkx import DiGraph, strongly_connected_components, MultiDiGraph
 from utils.threat_calc import ThreatCalculator
 
 
-def generate_graph(max_nodes: int, max_vulns_per_node: int, max_nodes_per_node: int, chance: float = 50):
+def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from_one_node: int, chance: float = 50):
     """
     Generates random attack graph
     :param chance: from 0 to 100
-    :param max_nodes_per_node:
+    :param max_compromized_from_one_node:
     :param max_vulns_per_node:
     :param max_nodes: nodes amount
     :return:
@@ -32,9 +32,9 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_nodes_per_node: 
         for node in nodes_list:
             nodes = []
             if cur_nodes_amount == 1:
-                step_nodes_amount = random.randint(1, max_nodes_per_node)
+                step_nodes_amount = random.randint(1, max_compromized_from_one_node)
             else:
-                step_nodes_amount = random.randint(0, max_nodes_per_node)
+                step_nodes_amount = random.randint(0, max_compromized_from_one_node)
 
             for i in range(step_nodes_amount):
                 next_node = cur_nodes_amount
@@ -135,9 +135,9 @@ def get_component_out_edges(graph: MultiDiGraph, nodes: list) -> list:
     """
     out_elems = []
     for elem in nodes:
-        for u, v, attrs in graph.out_edges(elem, attr=True):
-            if v not in nodes and v not in out_elems:
-                out_elems.append(v)
+        for u, v, key in graph.out_edges(elem, keys=True):
+            if v not in nodes and (u, v, key) not in out_elems:
+                out_elems.append([u, v, key])
     return out_elems
 
 def get_component_in_edges(graph: MultiDiGraph, nodes: list) -> list:
@@ -149,9 +149,9 @@ def get_component_in_edges(graph: MultiDiGraph, nodes: list) -> list:
     """
     in_elems = []
     for elem in nodes:
-        for u, v, attrs in graph.out_edges(elem, attr=True):
-            if u not in nodes and u not in in_elems:
-                in_elems.append(u)
+        for u, v, key in graph.in_edges(elem, keys=True):
+            if u not in nodes and (u, v, key) not in in_elems:
+                in_elems.append([u, v, key])
     return in_elems
 
 def map_component_edges(graph: MultiDiGraph, component):
@@ -162,3 +162,22 @@ def map_component_edges(graph: MultiDiGraph, component):
     :return:
     """
     return get_component_in_edges(graph, component), get_component_out_edges(graph, component)
+
+def map_component_inside_edges(graph: MultiDiGraph, component):
+    """
+    We look for all outgoing edges to ANOTHER components or nodes
+    :param graph:
+    :param component:
+    :return:
+    """
+    inside_edges = []
+    for node in component:
+        for edge in graph.edges(node, keys=True):
+            inside_edges.append(edge)
+    return inside_edges
+
+def get_sources_to_target_node(graph: MultiDiGraph, target) -> list:
+    in_elems = []
+    for u, v in graph.in_edges(target):
+        if v == target:
+            in_elems
