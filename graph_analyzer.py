@@ -183,7 +183,8 @@ def draw_graph_test():
 
 
 def test_optimized_class():
-    graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
+    graph, devices, vulns = generate_graph(50, 1, 30, chance=100)
+    # graph, devices, vulns = generate_graph(50, 2, 30, chance=75) -- 86 - 11 against 789 - 737. Nodes: 341, vulns: 525
 
     graph_copy = graph.copy()
     graph_for_simple = graph.copy()
