@@ -1,0 +1,1 @@
+https://deepai.org/publication/heuristic-approach-towards-countermeasure-selection-using-attack-graphs
