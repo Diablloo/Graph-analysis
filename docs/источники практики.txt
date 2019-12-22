@@ -1,0 +1,26 @@
+1.	Positive Technologies pentesters breach network perimeter at 92 percent of companies//PTSECURITY.COM: основной сайт Positive Technologies. – URL: https://www.ptsecurity.com/ww-en/analytics/corp-vulnerabilities-2019/ – (дата обращения 11.10.2019).
+2.	Criteria for Selecting an Information Security Risk Assessment Methodology: Qualitative, Quantitative, or Mixed//TCDI.COM: information security forum. – URL: https://www.tcdi.com/criteria-for-selecting-an-information-security-risk-assessment-methodology-qualitative-quantitative-or-mixed/. – (дата обращения 21.10.2019)
+3.	Брюховецкая Н.Е., Педерсен И.А. Vетодология оценки рисков предприятия//Стратегия и механизмы регулирования промышленного развития. – 2011. – стр. 58. https://cyberleninka.ru/article/n/metodologiya-otsenki-riskov-predpriyatiya/viewer
+4.	Visintine, V. Global information assurance certification paper
+5.	Caralli, R. A. Introducing OCTAVE Allegro: Improving the Information Security Risk Assessment Process
+6.	Peltier, T. R. Information security risk analysis, Third Edition
+7.	https://www.securityauditor.net/
+8.	ISO/IEC 17799:2005. Information technology. – Security techniques
+9.	https://riskwatch.com/2019/07/31/risk-scoring-methodology/
+10.	https://dsec.ru/press-release/digital-security-office-2005-kompleksnoe-reshenie-dlya-upravleniya-informatsionnoj-bezopasnostyu/
+11.	Астахов, А. Искусство управления информационными рисками
+12.	https://managementmania.com/en/cramm-ccta-risk-analysis-and-management-method
+13.	https://cyberleninka.ru/article/n/metodiki-i-programmnyy-komponent-otsenki-riskov-na-osnove-grafov-atak-dlya-sistem-upravleniya-informatsiey-i-sobytiyami-bezopasnosti/viewer
+14.	Ingols, K. Practical attack graph generation for network defense [Текст] / K. Ingols, R. Lippmann, K. Piwowarski // Proceedings of 22nd Annual Conference on the Computer Security Applications (Miami Beach, FL, 2006). – IEEE, 2006. – P. 121 – 130.
+15.	Жижелев А. В., Панфилов А. П., Язов Ю. К., Батищев Р. В. К оценке эффективности защиты информации в телекоммуникационных системах посредством нечетких множеств // Изв. вузов. Приборостроение. 2003. т. 46, № 7. С. 22 – 29
+16.	Kanoun, W. Automated reaction based on risk analysis and attackers skills in intrusion detection systems
+17.	https://cdn2.hubspot.net/hubfs/91381/2019%20Collateral/White%20Papers/Controlling%20Cyber%20Security/6%20Key%20Risk%20Management%20Metrics%20for%20Controlling%20Cyber%20Security%20.pdf
+18.	The Center for Internet Security. The CIS Security Metrics [Текст]. – The Center for Internet Security, 2009. – 175 p.
+19.	http://proceedings.spiiras.nw.ru/index.php/sp/article/view/1691
+20.	Mell P., Scarfone K., Romanosky S. A Complete Guide to the Common Vulnerability Scoring System Version 2.0, 2007
+21.	https://deepai.org/publication/heuristic-approach-towards-countermeasure-selection-using-attack-graphs
+22.	https://link.springer.com/article/10.1007%2FBF03219974
+23.	Lippmann, R. P. Validating and restoring defense in depth using attack graphs [Текст] / R. P. Lippmann et al // Proceedings of MILCOM 2006 (Washington, DC).
+24.	https://cyberleninka.ru/article/n/osnovnye-teoreticheskie-polozheniya-strukturizatsii-chastnyh-pokazateley-zaschity-informatsii-s-tselyu-integralnoy-otsenki
+25.	https://nmap.org/book/osdetect-device-types.html
+26.	https://www.geeksforgeeks.org/strongly-connected-components/
