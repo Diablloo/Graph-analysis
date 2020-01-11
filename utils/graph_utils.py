@@ -17,6 +17,8 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
     """
     # random.seed(time())
     random.seed(10)
+    edges_count = 0
+    nodes_count = 1
     cur_nodes_amount = 1
     step_nodes_count = 1
     graph = MultiDiGraph()
@@ -43,7 +45,7 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
                 nodes.append(next_node)
                 graph.add_node(next_node,weight=random.randint(1,10)*10)
                 tmp_nodes_list.append(next_node)
-
+                nodes_count += 1
 
                 devices.append(next_node)
                 step_vulns_for_node = random.randint(1, max_vulns_per_node)
@@ -56,6 +58,7 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
 
                     #graph.add_edge(node, cur_vuln, weight=0)
                     graph.add_edge(node, next_node, key=cur_vuln, cve=cur_vuln)
+                    edges_count += 1
 
             for node_first in nodes:
                 for node_second in nodes:
@@ -64,6 +67,7 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
                     for vuln in node_vulns[node_second]:
                         if random.randint(0, 100) < chance:
                             graph.add_edge(node_first, node_second, key=vuln, cve=vuln)
+                            edges_count += 1
             # for key, value in node_vulns.items():
             #     for key_2, value_2 in node_vulns.items():
             #         if key_2 == key:

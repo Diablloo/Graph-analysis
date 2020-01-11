@@ -3,6 +3,7 @@ from time import time
 import networkx as nx
 import matplotlib.pyplot as plt
 # import pygraphviz
+from math import floor, ceil
 from networkx import MultiDiGraph, maximum_branching, maximum_spanning_arborescence
 from networkx.drawing.nx_pydot import write_dot
 
@@ -182,8 +183,8 @@ def draw_graph_test():
     # visualizer.delete_graph()
 
 def test_optimized_class():
-    graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
-    # graph, devices, vulns = generate_graph(50, 2, 30, chance=75)#-- 86 - 11 against 789 - 737. Nodes: 341, vulns: 525
+    # graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
+    graph, devices, vulns = generate_graph(50, 2, 30, chance=75)#-- 86 - 11 against 789 - 737. Nodes: 341, vulns: 525
 
     cve_to_delete = 5
     deleted = 0
@@ -224,8 +225,74 @@ def test_optimized_class():
         deleted += 1
     write_dot(graph, 'tmp.dot')
 
+def generate_dataset_for_diagram(logfile_path):
+    nodes_up_to = 1000
+    connectivity_chance_max = 95
+    compromised_from_one_node_max = 200
+
+    nodes_step = 5
+    chance_step = 2.5
+    compromised_from_one_node_step = 10
+
+    nodes_current = 5
+    compromised_from_one_node_current = 5
+    chance_current = 50
+
+    prev_nodes_c = 0
+    prev_vulns_c = 0
+    prev_edges_c = 0
+
+    while nodes_up_to > nodes_current:
+        compromised_from_one_node_current = 5
+        compromised_from_one_node_max = ceil(nodes_current/2)
+        compromised_from_one_node_step = ceil(compromised_from_one_node_max/5)
+        compromised_from_one_node_current = compromised_from_one_node_step
+        while compromised_from_one_node_max > compromised_from_one_node_current:
+            graph, devices, vulns = generate_graph(nodes_current, 2, compromised_from_one_node_current, chance=75)
+            edges_count = len(graph.edges)
+            nodes_count = len(graph.nodes)
+
+            vulns_amount = 0
+            for vuln_list in vulns.values():
+                vulns_amount += len(vuln_list)
+
+            if edges_count == prev_edges_c and nodes_count == prev_nodes_c and vulns_amount == prev_vulns_c:
+                compromised_from_one_node_current += compromised_from_one_node_step
+                continue
+
+            graph_for_simple = graph.copy()
+            devices_copy = devices.copy()
+            vulns_copy = vulns.copy()
+            graphOptimizer = GraphOptimizer(graph)
+
+            start = time()
+            graphOptimizer.optimize()
+            optimization_time = time() - start
+
+            start = time()
+            graph_threat = ThreatCalculator(graph).calculate_graph_threat(devices)
+            cve, new_threat, target = graphOptimizer.intelligence_find_countermeasure()
+            spent_time5 = time() - start
+            start = time()
+            graph_threat = graph
+            cve, new_threat, target = find_best_countermeasure(graph_for_simple, devices_copy, vulns_copy)
+            spent_time3 = time() - start
+            # nodes vulns edges optimization_time optimized_computing_time basic_computing_time
+            print_str = f"{nodes_count}\t{edges_count}\t{optimization_time}\t{spent_time5}\t{spent_time3}"
+            with open(logfile_path,'w+') as f:
+                f.write(print_str)
+            print(f"{nodes_count}\t{vulns_amount}\t{edges_count}\t{optimization_time}\t{spent_time5}\t{spent_time3}")
+
+            prev_nodes_c = nodes_count
+            prev_vulns_c = vulns_amount
+            prev_edges_c = edges_count
+
+
+
+        nodes_current += nodes_step
+
 def branching_rest():
-    graph, devices, vulns = generate_graph(5, 2,     3, chance=75)
+    graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
     branching = maximum_branching(graph)
     arborescence = maximum_spanning_arborescence(graph)
 
@@ -235,5 +302,6 @@ if __name__ == '__main__':
     # draw_graph_test()
     # generate_graph_and_test()
     test_optimized_class()
+    # generate_dataset_for_diagram("log_statistics")
     # branching_rest()
 
