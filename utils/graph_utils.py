@@ -41,7 +41,7 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
                 cur_nodes_amount += 1
                 node_vulns[next_node] = []
                 nodes.append(next_node)
-                graph.add_node(next_node,weight=random.randint(1,10))
+                graph.add_node(next_node,weight=random.randint(1,10)*10)
                 tmp_nodes_list.append(next_node)
 
 
@@ -79,6 +79,13 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
 
     return (graph, devices, node_vulns)
 
+def remove_edges_with_cve(graph: MultiDiGraph, cve, target):
+    tmp = []
+    for u,v in graph.in_edges(target):
+        tmp.append([u,v])
+
+    for edge in tmp:
+        graph.remove_edge(edge[0],edge[1],cve)
 
 def get_strongly_connected_components(graph: DiGraph, min_nodes_in_component: int = 2):
     """

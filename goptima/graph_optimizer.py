@@ -303,7 +303,7 @@ class GraphOptimizer:
                 self.restore(deep_copy_params)
 
         print(f"Compute time: {computation_time}")
-        return max_cve, base_threat - max_reduction
+        return max_cve, base_threat - max_reduction, target
 
     def compute_threat(self):
         """

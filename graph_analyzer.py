@@ -7,7 +7,7 @@ from networkx import MultiDiGraph, maximum_branching, maximum_spanning_arboresce
 from networkx.drawing.nx_pydot import write_dot
 
 from utils.graph_utils import generate_graph, get_strongly_connected_components, map_component_edges, \
-    subgraph_threat, subgraph_criticality
+    subgraph_threat, subgraph_criticality, remove_edges_with_cve
 from utils.http_build_graph import GraphVisualizer
 from utils.threat_calc import ThreatCalculator
 from goptima.graph_optimizer import GraphOptimizer
@@ -181,42 +181,51 @@ def draw_graph_test():
     print(f"Spent {time_spent_for_building} seconds to build the graph")
     # visualizer.delete_graph()
 
-
 def test_optimized_class():
-    graph, devices, vulns = generate_graph(50, 1, 30, chance=100)
-    # graph, devices, vulns = generate_graph(50, 2, 30, chance=75) -- 86 - 11 against 789 - 737. Nodes: 341, vulns: 525
+    graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
+    # graph, devices, vulns = generate_graph(50, 2, 30, chance=75)#-- 86 - 11 against 789 - 737. Nodes: 341, vulns: 525
 
-    graph_copy = graph.copy()
-    graph_for_simple = graph.copy()
-    devices_copy = devices.copy()
-    vulns_copy = vulns.copy()
+    cve_to_delete = 5
+    deleted = 0
+    while deleted < cve_to_delete:
+        graph_copy = graph.copy()
+        graph_for_simple = graph.copy()
+        devices_copy = devices.copy()
+        vulns_copy = vulns.copy()
 
-    vulns_amount = 0
-    for vuln_list in vulns.values():
-        vulns_amount += len(vuln_list)
+        vulns_amount = 0
+        for vuln_list in vulns.values():
+            vulns_amount += len(vuln_list)
 
-    print(f"Vulnerabilities amount: {vulns_amount}")
-    print(f"Nodes amount: {len(devices)}")
-    # print_graph(graph, devices, vulns)
-    graphOptimizer = GraphOptimizer(graph)
+        print(f"Vulnerabilities amount: {vulns_amount}")
+        print(f"Nodes amount: {len(devices)}")
+        # print_graph(graph, devices, vulns)
+        graphOptimizer = GraphOptimizer(graph)
 
-    start = time()
-    graphOptimizer.optimize()
-    optimization_time = time() - start
+        start = time()
+        graphOptimizer.optimize()
+        optimization_time = time() - start
 
-    start = time()
-    cve, new_threat = graphOptimizer.intelligence_find_countermeasure()
-    spent_time5 = time() - start
-    print(f"Intelligence countermeasure search time {spent_time5} result: {cve} - {new_threat}")
-    print(f"Optimization time: {optimization_time}")
+        start = time()
+        graph_threat = ThreatCalculator(graph).calculate_graph_threat(devices)
+        cve, new_threat, target = graphOptimizer.intelligence_find_countermeasure()
+        spent_time5 = time() - start
+        print(f"Basic graph threat: {graph_threat}")
+        print(f"Intelligence countermeasure search time {spent_time5} result: {cve} - {new_threat}")
+        print(f"Optimization time: {optimization_time}")
 
-    start = time()
-    cve, new_threat, target = find_best_countermeasure(graph_for_simple, devices_copy, vulns_copy)
-    spent_time3 = time() - start
-    print(f"Simple countermeasure search time {spent_time3} result: {cve} - {new_threat}")
+        start = time()
+        graph_threat = graph
+        cve, new_threat, target = find_best_countermeasure(graph_for_simple, devices_copy, vulns_copy)
+        spent_time3 = time() - start
+        print(f"Simple countermeasure search time {spent_time3} result: {cve} - {new_threat}")
+
+        remove_edges_with_cve(graph, cve, target)
+        deleted += 1
+    write_dot(graph, 'tmp.dot')
 
 def branching_rest():
-    graph, devices, vulns = generate_graph(5, 2, 3, chance=75)
+    graph, devices, vulns = generate_graph(5, 2,     3, chance=75)
     branching = maximum_branching(graph)
     arborescence = maximum_spanning_arborescence(graph)
 
