@@ -32,7 +32,7 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
     while cur_nodes_amount < max_nodes:
         tmp_nodes_list = []
         for node in nodes_list:
-            nodes = []
+            nodes = [node]
             if cur_nodes_amount == 1:
                 step_nodes_amount = random.randint(1, max_compromized_from_one_node)
             else:
@@ -45,7 +45,6 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
                 nodes.append(next_node)
                 graph.add_node(next_node,weight=random.randint(1,10)*10)
                 tmp_nodes_list.append(next_node)
-                nodes_count += 1
 
                 devices.append(next_node)
                 step_vulns_for_node = random.randint(1, max_vulns_per_node)
@@ -60,9 +59,13 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
                     graph.add_edge(node, next_node, key=cur_vuln, cve=cur_vuln)
                     edges_count += 1
 
+                if cur_nodes_amount == max_nodes:
+                    break
             for node_first in nodes:
                 for node_second in nodes:
                     if node_first == node_second:
+                        continue
+                    if node_second not in node_vulns:
                         continue
                     for vuln in node_vulns[node_second]:
                         if random.randint(0, 100) < chance:
@@ -75,9 +78,12 @@ def generate_graph(max_nodes: int, max_vulns_per_node: int, max_compromized_from
             #         for vuln_name in value_2:
             #             if random.randint(0, 100) < chance:
             #                 graph.add_edge(key, key_2, cve=vuln_name)
+            if cur_nodes_amount == max_nodes:
+                break
         nodes_list = tmp_nodes_list
         if len(nodes_list) == 0:
             break
+
         # cur_nodes_amount += len(tmp_nodes_list)
         step_nodes_count = len(tmp_nodes_list)
 

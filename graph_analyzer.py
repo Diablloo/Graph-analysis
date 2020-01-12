@@ -230,11 +230,11 @@ def generate_dataset_for_diagram(logfile_path):
     connectivity_chance_max = 95
     compromised_from_one_node_max = 200
 
-    nodes_step = 5
+    nodes_step = 150
     chance_step = 2.5
     compromised_from_one_node_step = 10
 
-    nodes_current = 5
+    nodes_current = 350
     compromised_from_one_node_current = 5
     chance_current = 50
 
@@ -245,9 +245,9 @@ def generate_dataset_for_diagram(logfile_path):
     while nodes_up_to > nodes_current:
         compromised_from_one_node_current = 5
         compromised_from_one_node_max = ceil(nodes_current/2)
-        compromised_from_one_node_step = ceil(compromised_from_one_node_max/5)
+        compromised_from_one_node_step = ceil(compromised_from_one_node_max/1)
         compromised_from_one_node_current = compromised_from_one_node_step
-        while compromised_from_one_node_max > compromised_from_one_node_current:
+        while compromised_from_one_node_max >= compromised_from_one_node_current:
             graph, devices, vulns = generate_graph(nodes_current, 2, compromised_from_one_node_current, chance=75)
             edges_count = len(graph.edges)
             nodes_count = len(graph.nodes)
@@ -278,11 +278,12 @@ def generate_dataset_for_diagram(logfile_path):
             cve, new_threat, target = find_best_countermeasure(graph_for_simple, devices_copy, vulns_copy)
             spent_time3 = time() - start
             # nodes vulns edges optimization_time optimized_computing_time basic_computing_time
-            print_str = f"{nodes_count}\t{edges_count}\t{optimization_time}\t{spent_time5}\t{spent_time3}"
-            with open(logfile_path,'w+') as f:
+            print_str = f"{nodes_count}\t{vulns_amount}\t{edges_count}\t{optimization_time}\t{spent_time5}\t{spent_time3}\n"
+            with open(logfile_path,'a') as f:
                 f.write(print_str)
+            print(f"max_nodes: {nodes_current}")
             print(f"{nodes_count}\t{vulns_amount}\t{edges_count}\t{optimization_time}\t{spent_time5}\t{spent_time3}")
-
+            # write_dot(graph,'tmp.dot')
             prev_nodes_c = nodes_count
             prev_vulns_c = vulns_amount
             prev_edges_c = edges_count
@@ -301,7 +302,7 @@ def branching_rest():
 if __name__ == '__main__':
     # draw_graph_test()
     # generate_graph_and_test()
-    test_optimized_class()
-    # generate_dataset_for_diagram("log_statistics")
+    # test_optimized_class()
+    generate_dataset_for_diagram("log_statistics")
     # branching_rest()
 
