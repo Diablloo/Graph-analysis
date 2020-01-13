@@ -275,8 +275,8 @@ def generate_dataset_for_diagram(logfile_path):
             spent_time5 = time() - start
             start = time()
             graph_threat = graph
-            cve, new_threat, target = find_best_countermeasure(graph_for_simple, devices_copy, vulns_copy)
-            spent_time3 = time() - start
+            # cve, new_threat, target = find_best_countermeasure(graph_for_simple, devices_copy, vulns_copy)
+            spent_time3 = -1
             # nodes vulns edges optimization_time optimized_computing_time basic_computing_time
             print_str = f"{nodes_count}\t{vulns_amount}\t{edges_count}\t{optimization_time}\t{spent_time5}\t{spent_time3}\n"
             with open(logfile_path,'a') as f:
